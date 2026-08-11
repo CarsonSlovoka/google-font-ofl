@@ -23,3 +23,10 @@ git clone \
   git checkout
 )
 ```
+
+
+## usage
+
+```sh
+nvim -l scripts/find_github_page.lua 1>list.md 2>no_found.md
+```
