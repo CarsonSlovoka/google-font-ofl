@@ -1,0 +1,13 @@
+# ofl/                                   export-ignore
+# !ofl/afacad/article/ARTICLE.en_us.html export-ignore  👈 要一層一層來排除才可以
+
+/ofl/* export-ignore
+
+/ofl/afacad -export-ignore
+/ofl/afacad/* export-ignore
+
+/ofl/afacad/article -export-ignore
+/ofl/afacad/article/* export-ignore
+
+/ofl/afacad/article/ARTICLE.en_us.html -export-ignore
+
