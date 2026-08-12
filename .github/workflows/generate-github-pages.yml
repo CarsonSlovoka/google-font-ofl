@@ -62,7 +62,9 @@ jobs:
           )
           echo "ARTICLE count:"
           find ofl -name 'ARTICLE.en_us.html' | wc -l
-          find ofl -name 'ARTICLE.en_us.html' | head -5
+          # find ofl -name 'ARTICLE.en_us.html' | head -5
+          # Avoid broken-pipe exit under pipefail (head closes early)
+          find ofl -name 'ARTICLE.en_us.html' -print | head -n 5 || true
 
       - name: Run Lua scanner (stdout → list.md, stderr → no_found.md)
         id: scan
