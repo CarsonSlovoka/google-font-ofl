@@ -4,7 +4,7 @@
 
 使得能夠找到所有上架到google font它們的github主頁
 
-## ofl目錄中的: `upstream_info.md` 怎麼取得的
+## ofl目錄中的: `upstream_info.md`, `METADATA.pb`, `OFL.txt` 怎麼取得的
 
 
 ```sh
