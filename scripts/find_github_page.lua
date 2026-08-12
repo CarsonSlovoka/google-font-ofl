@@ -154,8 +154,11 @@ end
 local function get_github_info_from_metadata(filepath)
   assert(vim.fn.fnamemodify(filepath, ":t") == "METADATA.pb" or true, "expected METADATA.pb")
   vim.cmd("edit! " .. vim.fn.fnameescape(filepath))
-  -- local found = vim.fn.search([[https://github.com/[^'"]*]], "w")
-  local found = vim.fn.search([["https://github.com/[^'"]*"]], "w")
+
+
+  -- https://github.com/google/fonts/blob/038b637da7b3fd956a4ed93ffc607c3d5e4ce172/ofl/notoserifsc/METADATA.pb#L27 它用的是連結是www, 而不是github開頭: https://www.github.com/notofonts/noto-cjk
+  -- local found = vim.fn.search([["https://github.com/[^'"]*"]], "w")
+  local found = vim.fn.search([[\v"https://(www.)?github.com/[^'"]*"]], "w")
   if found == 0 then
     -- error("url not found")
     return
@@ -163,7 +166,13 @@ local function get_github_info_from_metadata(filepath)
   vim.cmd([[normal! lvi"y]])
   local url = vim.fn.getreg('"')
   url = url:gsub("/$", "")
+  -- local url = "https://www.github.com/notofonts/noto-cjk"
+  url = url:gsub("^(https?://)www%.", "%1") -- 去除www 即 www.github.com => github.com 就好
+  -- print(url)
+  -- local url = "https://github.com/notofonts/noto-cjk"
   local username, repo_name = url:match("^https?://github%.com/([^/]+)/([^/#?]+)")
+  -- print(url, username, repo_name)
+
   if username and repo_name then
     return {
       username = username,
