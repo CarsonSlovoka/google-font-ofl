@@ -4,6 +4,11 @@ no_found.md
 *.zip
 
 ofl/*
+!ofl/42dotsans/
+ofl/42dotsans/*
+# 留當範例
+!ofl/42dotsans/upstream_info.md
+!ofl/42dotsans/METADATA.pb
 
 !ofl/notosanshanunoo/
 ofl/notosanshanunoo/*

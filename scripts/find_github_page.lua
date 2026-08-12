@@ -148,6 +148,33 @@ local function get_github_info_from_upstream_info(filepath)
   return nil
 end
 
+
+---@param filepath string
+---@return GithubInfo?
+local function get_github_info_from_metadata(filepath)
+  assert(vim.fn.fnamemodify(filepath, ":t") == "METADATA.pb" or true, "expected METADATA.pb")
+  vim.cmd("edit! " .. vim.fn.fnameescape(filepath))
+  -- local found = vim.fn.search([[https://github.com/[^'"]*]], "w")
+  local found = vim.fn.search([["https://github.com/[^'"]*"]], "w")
+  if found == 0 then
+    -- error("url not found")
+    return
+  end
+  vim.cmd([[normal! lvi"y]])
+  local url = vim.fn.getreg('"')
+  url = url:gsub("/$", "")
+  local username, repo_name = url:match("^https?://github%.com/([^/]+)/([^/#?]+)")
+  if username and repo_name then
+    return {
+      username = username,
+      repo_name = repo_name,
+      url = url,
+    }
+  end
+  -- error("url not match: " .. url .. "\n" .. filepath)
+  return nil
+end
+
 local function main()
   ---@type GithubInfo[]
   local github_pages = {}
@@ -171,6 +198,13 @@ local function main()
 
     -- local item = get_github_info_article_html(filepath)
     local item = get_github_info_from_upstream_info(filepath)
+    if item == nil then
+      local metadata_path = vim.fs.joinpath(vim.fn.fnamemodify(filepath, ":h"), "METADATA.pb")
+      item = get_github_info_from_metadata(metadata_path)
+      -- if item == nil then
+      --   error(string.format("github url not found %s\n%s", filepath, metadata_path))
+      -- end
+    end
     if item then
       count_ok = count_ok + 1
       item.dirname = dirname

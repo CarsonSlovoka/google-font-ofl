@@ -21,6 +21,7 @@ git clone \
 (
   cd ~/google-font-ofl
   git sparse-checkout set --no-cone '/ofl/**/upstream_info.md'
+  git sparse-checkout set --no-cone '/ofl/**/METADATA.pb'
   git checkout
 )
 
