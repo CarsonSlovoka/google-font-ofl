@@ -24,6 +24,7 @@ local function search_files(filename, opts)
   opts = opts or {}
   opts = vim.tbl_deep_extend("force", {
     wkdir = ".",
+    opts = "", -- -HI
     ext = "",
   }, opts)
 
@@ -37,7 +38,9 @@ local function search_files(filename, opts)
     end
   end
 
-  local cmd = string.format("%s %s %s %s", fd_bin, filename, opts.ext, vim.fn.shellescape(opts.wkdir))
+  local cmd = string.format("%s %s %s %s %s",
+    fd_bin, filename, opts.ext, opts.opts,
+    vim.fn.shellescape(opts.wkdir))
   local lines = vim.fn.systemlist(cmd)
   if vim.v.shell_error ~= 0 then
     error(string.format("fd failed (code %s): %s", vim.v.shell_error, table.concat(lines, "\n")))
@@ -56,9 +59,11 @@ end
 ---@field url       string
 ---@field dirname   string?
 
+
+--- 不是每個專案都有這個檔案
 ---@param filepath string
 ---@return GithubInfo?
-local function get_github_info(filepath)
+local function get_github_info_article_html(filepath)
   assert(vim.fn.fnamemodify(filepath, ":t") == "ARTICLE.en_us.html" or true, "expected ARTICLE.en_us.html")
   -- Use :edit! to avoid modified buffer issues in batch
   vim.cmd("edit! " .. vim.fn.fnameescape(filepath))
@@ -98,6 +103,51 @@ local function get_github_info(filepath)
   return nil
 end
 
+
+--- 有的比較舊的專案，裡面不會寫到任何的url, 例如: https://github.com/google/fonts/tree/038b637da7b3fd956a4ed93ffc607c3d5e4ce172/ofl/rumraisin
+---
+---@param filepath string
+---@return GithubInfo?
+local function get_github_info_from_upstream_info(filepath)
+  assert(vim.fn.fnamemodify(filepath, ":t") == "upstream_info.md" or true, "expected upstream_info.md")
+  -- Use :edit! to avoid modified buffer issues in batch
+  vim.cmd("edit! " .. vim.fn.fnameescape(filepath))
+
+  -- Search for github link (double or single quoted)
+  local link_type = 1
+  local found = vim.fn.search([[.*|.*https://github.com/[^'"]*]], "w") -- | Repository URL | https://github.com/42dot/42dot-Sans |
+  if found == 0 then
+    vim.cmd("normal! gg")
+    if vim.fn.search([[(https://github.com/[^'"]*)]], "w") == 0 then -- 有的是寫這樣，不是用table: - **URL**: https://github.com/notofonts/hanunoo
+      -- error("github url not found: " .. filepath)
+      return nil
+    end
+    link_type = 2
+  end
+
+  -- Try to yank the URL inside quotes
+  if link_type == 1 then
+    vim.cmd([[normal! 0f|fhviWy]])
+  elseif link_type == 2 then
+    -- vim.cmd([[normal! 0]])
+    -- vim.fn.search("https://github.com", "w")
+    vim.cmd("normal! lviby")
+  end
+  vim.fn.setreg('"', "")
+  local url = vim.fn.getreg('"')
+  url = url:gsub("/$", "")
+  local username, repo_name = url:match("^https?://github%.com/([^/]+)/([^/#?]+)")
+  if username and repo_name then
+    return {
+      username = username,
+      repo_name = repo_name,
+      url = url,
+    }
+  end
+  -- error("url not match: " .. url)
+  return nil
+end
+
 local function main()
   ---@type GithubInfo[]
   local github_pages = {}
@@ -107,8 +157,10 @@ local function main()
   local err = nil
   local ofl_dir = script_dir .. "/../ofl"
 
-  for filepath in search_files("ARTICLE.en_us.html", {
-    ext = "-e html",
+  -- fd upstream_info.md -e md -HI ../ofl
+  for filepath in search_files("upstream_info.md", {
+    ext = "-e md",
+    opts = "-HI",
     wkdir = ofl_dir,
   }) do
     local normalized = (vim.fs and vim.fs.normalize and vim.fs.normalize(filepath)) or filepath
@@ -117,7 +169,8 @@ local function main()
       dirname = vim.fn.fnamemodify(filepath, ":h:h:t") -- fallback: parent of article/
     end
 
-    local item = get_github_info(filepath)
+    -- local item = get_github_info_article_html(filepath)
+    local item = get_github_info_from_upstream_info(filepath)
     if item then
       count_ok = count_ok + 1
       item.dirname = dirname

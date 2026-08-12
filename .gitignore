@@ -2,3 +2,11 @@ list.md
 no_found.md
 
 *.zip
+
+ofl/*
+
+!ofl/notosanshanunoo/
+ofl/notosanshanunoo/*
+!ofl/notosanshanunoo/upstream_info.md
+
+
