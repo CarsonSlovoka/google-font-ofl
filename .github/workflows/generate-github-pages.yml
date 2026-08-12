@@ -55,16 +55,19 @@ jobs:
             https://github.com/google/fonts.git /tmp/google-fonts
           (
             cd /tmp/google-fonts
-            git sparse-checkout set --no-cone 'ofl/**/ARTICLE.en_us.html'
+            # git sparse-checkout set --no-cone 'ofl/**/ARTICLE.en_us.html'
+            git sparse-checkout set --no-cone '/ofl/**/upstream_info.md'
+            git sparse-checkout set --no-cone '/ofl/**/METADATA.pb'
+            git sparse-checkout set --no-cone '/ofl/**/OFL.txt'
             if [ -d ofl ]; then
               cp -a ofl/. "$GITHUB_WORKSPACE/ofl/"
             fi
           )
-          echo "ARTICLE count:"
-          find ofl -name 'ARTICLE.en_us.html' | wc -l
-          # find ofl -name 'ARTICLE.en_us.html' | head -5
-          # Avoid broken-pipe exit under pipefail (head closes early)
-          find ofl -name 'ARTICLE.en_us.html' -print | head -n 5 || true
+          # echo "ARTICLE count:"
+          # find ofl -name 'ARTICLE.en_us.html' | wc -l
+          # # find ofl -name 'ARTICLE.en_us.html' | head -5
+          # # Avoid broken-pipe exit under pipefail (head closes early)
+          # find ofl -name 'ARTICLE.en_us.html' -print | head -n 5 || true
 
       - name: Run Lua scanner (stdout → list.md, stderr → no_found.md)
         id: scan
