@@ -18,3 +18,8 @@ ofl/notosanshanunoo/*
 !ofl/notoserifsc/
 ofl/notoserifsc/*
 !ofl/notoserifsc/METADATA.pb
+
+!ofl/lemonadavfbeta/
+ofl/lemonadavfbeta/*
+!ofl/lemonadavfbeta/OFL.txt
+

@@ -3,6 +3,8 @@
 -- Compatible with Neovim 0.9+
 -- Requires: fd (or fdfind) in PATH
 
+local utils = require("utils")
+
 local script_file = debug.getinfo(1, "S").source:sub(2)
 -- Prefer vim.fs if available, fallback for older nvim
 local script_dir
@@ -184,6 +186,33 @@ local function get_github_info_from_metadata(filepath)
   return nil
 end
 
+---@param filepath string
+---@return GithubInfo?
+local function get_github_info_from_ofl_txt(filepath)
+  assert(vim.fn.fnamemodify(filepath, ":t") == "OFL.txt" or true, "expected OFL.txt")
+  vim.cmd("edit! " .. vim.fn.fnameescape(filepath))
+  vim.cmd("set fileformat=unix") -- 轉成\n
+
+  local found = vim.fn.search([[\vhttps://(www.)?github.com/[^'"]*]], "w")
+  if found == 0 then
+    return
+  end
+
+  vim.cmd([[normal! viWy]])
+  local url = vim.fn.getreg('"')
+  url = url:gsub("/$", "")
+  url = require("utils").strip_outer(url) -- 去除', (, ), "
+  local username, repo_name = url:match("^https?://github%.com/([^/]+)/([^/#?]+)")
+  if username and repo_name then
+    return {
+      username = username,
+      repo_name = repo_name,
+      url = url,
+    }
+  end
+  return nil
+end
+
 local function main()
   ---@type GithubInfo[]
   local github_pages = {}
@@ -205,15 +234,19 @@ local function main()
       dirname = vim.fn.fnamemodify(filepath, ":h:h:t") -- fallback: parent of article/
     end
 
+    local abs_dir_path = vim.fn.fnamemodify(filepath, ":h:p")
+    local metadata_path = vim.fs.joinpath(abs_dir_path, "METADATA.pb")
+    local ofl_txt_path = vim.fs.joinpath(abs_dir_path, "OFL.txt")
+
     -- local item = get_github_info_article_html(filepath)
-    local item = get_github_info_from_upstream_info(filepath)
-    if item == nil then
-      local metadata_path = vim.fs.joinpath(vim.fn.fnamemodify(filepath, ":h"), "METADATA.pb")
-      item = get_github_info_from_metadata(metadata_path)
-      -- if item == nil then
-      --   error(string.format("github url not found %s\n%s", filepath, metadata_path))
-      -- end
-    end
+    local item = get_github_info_from_upstream_info(filepath) or
+        get_github_info_from_metadata(metadata_path) or
+        get_github_info_from_ofl_txt(ofl_txt_path)
+
+    -- if item == nil then
+    --   error(string.format("github url not in %s\n%s\n%s", filepath, metadata_path, ofl_txt_path))
+    -- end
+
     if item then
       count_ok = count_ok + 1
       item.dirname = dirname
