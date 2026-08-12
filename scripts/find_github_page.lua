@@ -1,9 +1,9 @@
--- nvim   -l find_github_page.lua 1>list.md 2>no_found.md
+--         nvim   -l         find_github_page.lua 1>list.md 2>no_found.md
+-- (cd ..; nvim   -l scripts/find_github_page.lua 1>list.md 2>no_found.md)
 
 -- Compatible with Neovim 0.9+
 -- Requires: fd (or fdfind) in PATH
 
-local utils = require("utils")
 
 local script_file = debug.getinfo(1, "S").source:sub(2)
 -- Prefer vim.fs if available, fallback for older nvim
@@ -14,6 +14,11 @@ if vim.fs and vim.fs.dirname then
 else
   script_dir = vim.fn.fnamemodify(script_file, ":p:h")
 end
+
+local git_root = vim.fn.fnamemodify(script_dir, ":h:p") -- 使得 git_root/lua/*.lua 下的內容可以被當成require的對像
+vim.opt.runtimepath:prepend(git_root)
+
+local utils = require("utils")
 
 ---@class SearchOpt
 ---@field wkdir string
@@ -201,7 +206,7 @@ local function get_github_info_from_ofl_txt(filepath)
   vim.cmd([[normal! viWy]])
   local url = vim.fn.getreg('"')
   url = url:gsub("/$", "")
-  url = require("utils").strip_outer(url) -- 去除', (, ), "
+  url = utils.strip_outer(url) -- 去除', (, ), "
   local username, repo_name = url:match("^https?://github%.com/([^/]+)/([^/#?]+)")
   if username and repo_name then
     return {
