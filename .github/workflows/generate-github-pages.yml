@@ -105,8 +105,8 @@ jobs:
         run: |
           set -euo pipefail
           # Logic lives in scripts/enrich_github_data.py (maintainable outside YAML)
-          # python3 scripts/enrich_github_data.py data.json --with-workflows
-          python3 scripts/enrich_github_data.py data.json
+          python3 scripts/enrich_github_data.py data.json --with-workflows
+          # python3 scripts/enrich_github_data.py data.json  # 也行, 但是否有action就會不曉得
 
       - name: Build static site for GitHub Pages
         env:
