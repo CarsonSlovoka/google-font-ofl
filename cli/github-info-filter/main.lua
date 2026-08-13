@@ -4,6 +4,7 @@
 --- nvim -l main.lua "$(git rev-parse --show-toplevel)/site/data.json" "pushed_at>=2026-08-01T00:00:00+08:00" "stars>=1000" | jq .
 
 local script_file = debug.getinfo(1, "S").source:sub(2)
+script_file = assert(vim.uv.fs_realpath(script_file)) -- Important: 如果是 symlink 能解析成真正的檔案位置. 使得能保證用連結呼叫的路徑也是一致的
 local script_dir = vim.fn.fnamemodify(script_file, ":p:h")
 local git_root = vim.fn.fnamemodify(script_dir, ":h:h:p")
 vim.opt.runtimepath:prepend(git_root)
