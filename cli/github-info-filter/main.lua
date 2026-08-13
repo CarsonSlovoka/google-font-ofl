@@ -1,9 +1,11 @@
---- nvim -l filter.lua ../site/data.json "pushed_at>=2026-08-01T00:00:00+08:00" "stars>=1000"
---- nvim -l filter.lua ../site/data.json "pushed_at>=2026-08-01T00:00:00+08:00" "stars>=1000" | jq .
+#!/usr/bin/env -S nvim -u NONE --headless -l
+
+--- nvim -l main.lua ../../site/data.json "pushed_at>=2026-08-01T00:00:00+08:00" "stars>=1000"
+--- nvim -l main.lua "$(git rev-parse --show-toplevel)/site/data.json" "pushed_at>=2026-08-01T00:00:00+08:00" "stars>=1000" | jq .
 
 local script_file = debug.getinfo(1, "S").source:sub(2)
 local script_dir = vim.fn.fnamemodify(script_file, ":p:h")
-local git_root = vim.fn.fnamemodify(script_dir, ":h:p")
+local git_root = vim.fn.fnamemodify(script_dir, ":h:h:p")
 vim.opt.runtimepath:prepend(git_root)
 
 local gf = require("github-filter")

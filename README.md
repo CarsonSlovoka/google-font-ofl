@@ -71,29 +71,11 @@ open http://localhost:8080/index.html
 
 沒有的 repo 會是空陣列，前端自動隱藏
 
-### query
+### query/filter
 
-可以透過filter.lua來對生成出來的[data.json](site/data.json)查詢
+可以透過[cli/github-info-filter](cli/github-info-filter/main.lua)來查詢生成的[data.json](site/data.json)
 
-出來都是寫到stdout, stderr, 如果有需要可以自己再導出到文件
-
-```sh
-nvim -l scripts/filter.lua -h
-
-nvim -l scripts/filter.lua  site/data.json \
-  "pushed_at>=2026-08-01T00:00:00+08:00" \
-  "stars>=1000" \
-  | jq .
-
-
-# 輸出到文件
-nvim -l scripts/filter.lua  site/data.json \
-  "pushed_at>=2026-08-01T00:00:00+08:00" \
-  "workflows nonempty" \
-  | jq . > /tmp/workflog_noempty.json
-```
-
-> [!NOTE] 多條件目前只支援AND, 都是用AND串接
+使用方式可以直接參考其[README.md](cli/github-info-filter/README.md)
 
 ## ofl 資料來源
 
