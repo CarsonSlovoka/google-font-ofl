@@ -28,3 +28,4 @@ ofl/lemonadavfbeta/*
 data.json
 _site/
 
+/scripts/*.json
