@@ -1,6 +1,8 @@
 # ofl/                                   export-ignore
 # !ofl/afacad/article/ARTICLE.en_us.html export-ignore  👈 要一層一層來排除才可以
 
+LICENSE export-ignore
+
 /ofl/* export-ignore
 
 /ofl/afacad -export-ignore
@@ -11,3 +13,18 @@
 
 /ofl/afacad/article/ARTICLE.en_us.html -export-ignore
 
+
+/ofl/42dotsans                         -export-ignore
+/ofl/42dotsans/*                        export-ignore
+/ofl/42dotsans/upstream_info.md        -export-ignore
+/ofl/42dotsans/METADATA.pb             -export-ignore
+
+
+/ofl/notosanshanunoo                   -export-ignore
+/ofl/notosanshanunoo/*                  export-ignore
+/ofl/notosanshanunoo/upstream_info.md  -export-ignore
+
+
+/ofl/lemonadavfbeta                    -export-ignore
+/ofl/lemonadavfbeta/*                   export-ignore
+/ofl/lemonadavfbeta/upstream_info.md   -export-ignore
