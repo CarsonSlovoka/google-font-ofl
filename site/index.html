@@ -25,7 +25,6 @@
   </header>
 
   <main class="container">
-    <!-- Controls -->
     <section class="controls" aria-label="篩選與排序">
       <div class="control-row">
         <label class="search-wrap">
@@ -36,11 +35,12 @@
         <label>
           排序
           <select id="sort">
-            <option value="name-asc">Family 名稱 A→Z</option>
-            <option value="name-desc">Family 名稱 Z→A</option>
-            <option value="stars-desc" selected>⭐ Stars 高→低</option>
+            <option value="pushed-desc" selected>🕐 最近 push</option>
+            <option value="stars-desc">⭐ Stars 高→低</option>
             <option value="stars-asc">⭐ Stars 低→高</option>
             <option value="forks-desc">🍴 Forks 高→低</option>
+            <option value="name-asc">Family 名稱 A→Z</option>
+            <option value="name-desc">Family 名稱 Z→A</option>
             <option value="repo-asc">Repo 名稱 A→Z</option>
           </select>
         </label>
@@ -57,16 +57,43 @@
         </label>
       </div>
 
+      <div class="control-row filters">
+        <label>
+          Language
+          <select id="language">
+            <option value="">全部語言</option>
+          </select>
+        </label>
+
+        <label>
+          近期異動
+          <select id="recent">
+            <option value="">不限時間</option>
+            <option value="7">最近 7 天有 push</option>
+            <option value="30">最近 30 天有 push</option>
+            <option value="90">最近 90 天有 push</option>
+            <option value="365">最近 1 年有 push</option>
+          </select>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" id="has-workflows">
+          僅顯示有 GitHub Actions
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" id="has-issue-templates">
+          僅顯示有 Issue Template
+        </label>
+      </div>
+
       <div class="control-row secondary">
         <span id="result-count">載入中…</span>
         <div class="pagination" id="pagination"></div>
       </div>
     </section>
 
-    <!-- Cards grid -->
-    <section id="grid" class="grid" aria-live="polite">
-      <!-- filled by JS -->
-    </section>
+    <section id="grid" class="grid" aria-live="polite"></section>
 
     <section class="missing" id="missing-section" hidden>
       <h2>⚠️ 找不到 GitHub 連結的 family</h2>
@@ -80,6 +107,7 @@
       <p>
         Source: <a href="https://github.com/google/fonts">google/fonts</a> ·
         Scanner: <code>nvim -l scripts/find_github_page.lua</code> ·
+        Enrich: <code>scripts/enrich_github_data.py</code> ·
         Stats cards: <a href="https://github.com/pranesh-2005/github-readme-stats-fast" target="_blank" rel="noopener">github-readme-stats-fast</a>
       </p>
       <p>

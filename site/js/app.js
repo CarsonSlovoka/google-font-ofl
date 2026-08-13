@@ -1,8 +1,9 @@
 /**
  * Google Fonts OFL upstream GitHub browser
- * - Loads data.json
- * - Search / sort / pagination
- * - Renders real links + github-readme-stats-fast pin cards
+ * - data.json
+ * - search / language / recent activity / workflows filters
+ * - sort / pagination
+ * - pin cards + workflow / issue-template links
  */
 
 (function () {
@@ -17,8 +18,12 @@
     filtered: [],
     page: 1,
     perPage: 24,
-    sort: "stars-desc",
+    sort: "pushed-desc",
     query: "",
+    language: "",
+    recentDays: 0,
+    onlyWorkflows: false,
+    onlyIssueTemplates: false,
     meta: { success: 0, fail: 0, generated_at: "" },
   };
 
@@ -27,6 +32,10 @@
   const searchEl = $("#search");
   const sortEl = $("#sort");
   const perPageEl = $("#per-page");
+  const languageEl = $("#language");
+  const recentEl = $("#recent");
+  const hasWfEl = $("#has-workflows");
+  const hasItEl = $("#has-issue-templates");
   const resultCount = $("#result-count");
   const pagination = $("#pagination");
 
@@ -50,8 +59,35 @@
     return (s || "").toString().toLowerCase();
   }
 
+  function parseDate(iso) {
+    if (!iso) return 0;
+    const t = Date.parse(iso);
+    return Number.isFinite(t) ? t : 0;
+  }
+
+  function relativeTime(iso) {
+    const t = parseDate(iso);
+    if (!t) return "—";
+    const diff = Date.now() - t;
+    const sec = Math.floor(diff / 1000);
+    if (sec < 60) return "剛剛";
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} 分鐘前`;
+    const hr = Math.floor(min / 60);
+    if (hr < 48) return `${hr} 小時前`;
+    const day = Math.floor(hr / 24);
+    if (day < 60) return `${day} 天前`;
+    const mon = Math.floor(day / 30);
+    if (mon < 24) return `${mon} 個月前`;
+    return `${Math.floor(day / 365)} 年前`;
+  }
+
   function applyFilterAndSort() {
     const q = normalize(state.query);
+    const lang = state.language;
+    const recentMs = state.recentDays > 0 ? state.recentDays * 86400000 : 0;
+    const now = Date.now();
+
     let list = state.items.slice();
 
     if (q) {
@@ -60,9 +96,31 @@
           normalize(it.dirname).includes(q) ||
           normalize(it.username).includes(q) ||
           normalize(it.repo_name).includes(q) ||
-          normalize(it.url).includes(q)
+          normalize(it.url).includes(q) ||
+          normalize(it.description).includes(q)
         );
       });
+    }
+
+    if (lang) {
+      list = list.filter((it) => (it.language || "") === lang);
+    }
+
+    if (recentMs > 0) {
+      list = list.filter((it) => {
+        const t = parseDate(it.pushed_at);
+        return t > 0 && now - t <= recentMs;
+      });
+    }
+
+    if (state.onlyWorkflows) {
+      list = list.filter((it) => Array.isArray(it.workflows) && it.workflows.length > 0);
+    }
+
+    if (state.onlyIssueTemplates) {
+      list = list.filter(
+        (it) => Array.isArray(it.issue_templates) && it.issue_templates.length > 0
+      );
     }
 
     const [key, dir] = state.sort.split("-");
@@ -80,6 +138,9 @@
       } else if (key === "forks") {
         av = a.forks ?? -1;
         bv = b.forks ?? -1;
+      } else if (key === "pushed") {
+        av = parseDate(a.pushed_at);
+        bv = parseDate(b.pushed_at);
       } else {
         av = normalize(a.dirname);
         bv = normalize(b.dirname);
@@ -109,6 +170,21 @@
     if (n == null || n < 0) return "—";
     if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k";
     return String(n);
+  }
+
+  function renderFileLinks(files, label) {
+    if (!files || !files.length) return "";
+    const max = 4;
+    const shown = files.slice(0, max);
+    const more = files.length - shown.length;
+    const links = shown
+      .map(
+        (f) =>
+          `<a class="file-link" href="${escapeAttr(f.url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(f.path)}">${escapeHtml(f.name)}</a>`
+      )
+      .join("");
+    const extra = more > 0 ? `<span class="file-more">+${more}</span>` : "";
+    return `<div class="file-row"><span class="file-label">${label}</span>${links}${extra}</div>`;
   }
 
   function renderCard(item) {
@@ -147,19 +223,31 @@
 
     const meta = document.createElement("div");
     meta.className = "card-meta-row";
+    const parts = [];
     if (item.stars != null && item.stars >= 0) {
-      meta.innerHTML = `
-        <span title="Stars">⭐ ${formatNum(item.stars)}</span>
-        <span title="Forks">🍴 ${formatNum(item.forks)}</span>
-        ${item.language ? `<span class="pill">${escapeHtml(item.language)}</span>` : ""}
-      `;
-    } else {
-      meta.innerHTML = `<span class="pill">點卡片看 GitHub 統計</span>`;
+      parts.push(`<span title="Stars">⭐ ${formatNum(item.stars)}</span>`);
+      parts.push(`<span title="Forks">🍴 ${formatNum(item.forks)}</span>`);
     }
+    if (item.language) {
+      parts.push(`<span class="pill">${escapeHtml(item.language)}</span>`);
+    }
+    if (item.pushed_at) {
+      parts.push(
+        `<span title="Last push: ${escapeAttr(item.pushed_at)}">🕐 ${relativeTime(item.pushed_at)}</span>`
+      );
+    }
+    meta.innerHTML = parts.join("") || `<span class="pill">點卡片看 GitHub 統計</span>`;
+
+    const filesBlock = document.createElement("div");
+    filesBlock.className = "card-files";
+    filesBlock.innerHTML =
+      renderFileLinks(item.workflows, "Actions") +
+      renderFileLinks(item.issue_templates, "Issue templates");
 
     card.appendChild(title);
     card.appendChild(stats);
     card.appendChild(meta);
+    if (filesBlock.innerHTML.trim()) card.appendChild(filesBlock);
     return card;
   }
 
@@ -184,7 +272,6 @@
 
     addBtn("«", Math.max(1, state.page - 1), state.page === 1, false);
 
-    // window of page numbers
     const windowSize = 5;
     let start = Math.max(1, state.page - Math.floor(windowSize / 2));
     let end = Math.min(pages, start + windowSize - 1);
@@ -257,6 +344,23 @@
     $("#badge-time").textContent = `產生時間：${state.meta.generated_at || "—"}`;
   }
 
+  function fillLanguageOptions(items) {
+    const counts = new Map();
+    for (const it of items) {
+      const lang = it.language || "";
+      if (!lang) continue;
+      counts.set(lang, (counts.get(lang) || 0) + 1);
+    }
+    const langs = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    languageEl.innerHTML = `<option value="">全部語言</option>`;
+    for (const [lang, n] of langs) {
+      const opt = document.createElement("option");
+      opt.value = lang;
+      opt.textContent = `${lang} (${n})`;
+      languageEl.appendChild(opt);
+    }
+  }
+
   async function loadData() {
     try {
       const res = await fetch("data.json", { cache: "no-cache" });
@@ -264,10 +368,11 @@
       const data = await res.json();
 
       state.items = Array.isArray(data.items) ? data.items : [];
-      // ensure numeric fields
       for (const it of state.items) {
         if (typeof it.stars !== "number") it.stars = -1;
         if (typeof it.forks !== "number") it.forks = -1;
+        if (!Array.isArray(it.workflows)) it.workflows = [];
+        if (!Array.isArray(it.issue_templates)) it.issue_templates = [];
       }
       state.meta = {
         success: data.success_count ?? state.items.length,
@@ -275,6 +380,7 @@
         generated_at: data.generated_at || "",
       };
       updateBadges();
+      fillLanguageOptions(state.items);
       applyFilterAndSort();
     } catch (err) {
       console.error(err);
@@ -282,7 +388,6 @@
       resultCount.textContent = "載入失敗";
     }
 
-    // optional missing list
     try {
       const r = await fetch("no_found.md", { cache: "no-cache" });
       if (r.ok) {
@@ -297,7 +402,6 @@
     }
   }
 
-  // Events
   let searchTimer;
   searchEl.addEventListener("input", () => {
     clearTimeout(searchTimer);
@@ -318,13 +422,31 @@
     render();
   });
 
-  // theme change → refresh pin images
+  languageEl.addEventListener("change", () => {
+    state.language = languageEl.value;
+    applyFilterAndSort();
+  });
+
+  recentEl.addEventListener("change", () => {
+    state.recentDays = Number(recentEl.value) || 0;
+    applyFilterAndSort();
+  });
+
+  hasWfEl.addEventListener("change", () => {
+    state.onlyWorkflows = hasWfEl.checked;
+    applyFilterAndSort();
+  });
+
+  hasItEl.addEventListener("change", () => {
+    state.onlyIssueTemplates = hasItEl.checked;
+    applyFilterAndSort();
+  });
+
   if (window.matchMedia) {
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
       render();
     });
   }
 
-  // init
   loadData();
 })();

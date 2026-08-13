@@ -383,3 +383,70 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* Extra filter row */
+.control-row.filters {
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+
+.checkbox-label {
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input {
+  accent-color: var(--accent);
+}
+
+/* Workflow / issue template links on card */
+.card-files {
+  padding: 0 1rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.65rem;
+  margin-top: 0.15rem;
+}
+
+.file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.file-label {
+  color: var(--muted);
+  font-weight: 600;
+  margin-right: 0.15rem;
+  flex-shrink: 0;
+}
+
+.file-link {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  text-decoration: none;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-link:hover {
+  border-color: var(--accent);
+  text-decoration: underline;
+}
+
+.file-more {
+  color: var(--muted);
+  font-size: 0.75rem;
+}

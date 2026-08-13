@@ -99,87 +99,14 @@ jobs:
           echo "fail_count=$FAIL" >> "$GITHUB_OUTPUT"
           echo "Success: $SUCCESS  Fail: $FAIL"
 
-      - name: Enrich data.json with stars / forks / language (GitHub API)
+      - name: Enrich data.json (stars / forks / language / recent activity / workflows)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 << 'PY'
-          import json, os, time, urllib.request, urllib.error
-          from concurrent.futures import ThreadPoolExecutor, as_completed
-
-          token = os.environ.get("GH_TOKEN", "")
-          headers = {
-              "Accept": "application/vnd.github+json",
-              "User-Agent": "google-fonts-ofl-pages",
-              "X-GitHub-Api-Version": "2022-11-28",
-          }
-          if token:
-              headers["Authorization"] = f"Bearer {token}"
-
-          with open("data.json", encoding="utf-8") as f:
-              data = json.load(f)
-
-          items = data.get("items") or []
-          # unique (username, repo) → list of item indices
-          unique = {}
-          for i, it in enumerate(items):
-              key = (it.get("username") or "", it.get("repo_name") or "")
-              unique.setdefault(key, []).append(i)
-
-          print(f"Items: {len(items)}, unique repos: {len(unique)}")
-
-          def fetch_repo(username, repo):
-              url = f"https://api.github.com/repos/{username}/{repo}"
-              req = urllib.request.Request(url, headers=headers)
-              try:
-                  with urllib.request.urlopen(req, timeout=20) as resp:
-                      body = json.loads(resp.read().decode())
-                      return {
-                          "stars": body.get("stargazers_count", 0),
-                          "forks": body.get("forks_count", 0),
-                          "language": body.get("language") or "",
-                          "description": body.get("description") or "",
-                      }
-              except urllib.error.HTTPError as e:
-                  return {"stars": -1, "forks": -1, "language": "", "error": f"HTTP {e.code}"}
-              except Exception as e:
-                  return {"stars": -1, "forks": -1, "language": "", "error": str(e)}
-
-          results = {}
-          # modest parallelism to stay polite with secondary rate limits
-          with ThreadPoolExecutor(max_workers=8) as ex:
-              futs = {
-                  ex.submit(fetch_repo, u, r): (u, r)
-                  for (u, r) in unique.keys()
-                  if u and r
-              }
-              done = 0
-              for fut in as_completed(futs):
-                  key = futs[fut]
-                  results[key] = fut.result()
-                  done += 1
-                  if done % 50 == 0 or done == len(futs):
-                      print(f"  fetched {done}/{len(futs)}")
-
-          enriched = 0
-          for (u, r), idxs in unique.items():
-              info = results.get((u, r), {"stars": -1, "forks": -1, "language": ""})
-              for i in idxs:
-                  items[i]["stars"] = info.get("stars", -1)
-                  items[i]["forks"] = info.get("forks", -1)
-                  items[i]["language"] = info.get("language") or ""
-                  if "description" in info and info["description"]:
-                      items[i]["description"] = info["description"]
-                  if items[i]["stars"] >= 0:
-                      enriched += 1
-
-          data["items"] = items
-          data["enriched_count"] = enriched
-          with open("data.json", "w", encoding="utf-8") as f:
-              json.dump(data, f, ensure_ascii=False, indent=2)
-          print(f"Enriched {enriched}/{len(items)} items → data.json")
-          PY
+          # Logic lives in scripts/enrich_github_data.py (maintainable outside YAML)
+          # python3 scripts/enrich_github_data.py data.json --with-workflows
+          python3 scripts/enrich_github_data.py data.json
 
       - name: Build static site for GitHub Pages
         env:
