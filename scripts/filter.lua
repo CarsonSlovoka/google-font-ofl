@@ -1,18 +1,63 @@
+--- nvim -l filter.lua ../site/data.json "pushed_at>=2026-08-01T00:00:00+08:00" "stars>=1000"
+--- nvim -l filter.lua ../site/data.json "pushed_at>=2026-08-01T00:00:00+08:00" "stars>=1000" | jq .
+
 local script_file = debug.getinfo(1, "S").source:sub(2)
 local script_dir = vim.fn.fnamemodify(script_file, ":p:h")
 local git_root = vim.fn.fnamemodify(script_dir, ":h:p")
 vim.opt.runtimepath:prepend(git_root)
 
-local site_data_json_path = vim.fs.joinpath(git_root, "/site/data.json")
+local gf = require("github-filter")
 
-local filter = require("github-filter")
+local function print_help()
+  io.stdout:write([[
+Usage:
+  nvim -l filter.lua <json-file> [condition...]
+  nvim -l filter.lua --help
 
-local filtered = filter.filter_file(site_data_json_path, 7, 150)
+Conditions (AND logic). Examples:
+  stars>150
+  stars>=100
+  pushed_at>=2026-08-01
+  pushed_at>=2026-08-01T00:00:00Z
+  pushed_at>=2026-08-01T00:00:00Z
+  language==Python
+  language!=
+  workflows nonempty
+  workflows empty
+  workflows length>0
+  issue_templates length>=1
 
--- 快速查看結果
-for _, item in ipairs(filtered) do
-  print(string.format("%s/%s  ★%d  %s", item.username, item.repo_name, item.stars, item.updated_at))
+Output: JSON array of matching items on stdout.
+Errors go to stderr; exit code 1 on failure.
+
+datetime format: ISO 8601
+]])
 end
 
-local out = vim.json.encode({ items = filtered }, { indent = "  " })
-vim.fn.writefile(vim.split(out, "\n"), "filtered_repos.json")
+local function main(args)
+  if #args == 0 or args[1] == "--help" or args[1] == "-h" then
+    print_help()
+    return 0
+  end
+
+  local path = args[1]
+  local conditions = {}
+  for i = 2, #args do
+    conditions[#conditions + 1] = args[i]
+  end
+
+  local result, err = gf.filter_file(path, conditions)
+  if not result then
+    io.stderr:write("error: " .. err .. "\n")
+    return 1
+  end
+
+  -- pretty-print JSON array
+  local encoded = vim.json.encode(result)
+  -- simple pretty (neovim json.encode is compact; we keep it compact for speed)
+  io.stdout:write(encoded)
+  io.stdout:write("\n")
+  return 0
+end
+
+main(_G.arg)

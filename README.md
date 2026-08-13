@@ -71,6 +71,30 @@ open http://localhost:8080/index.html
 
 沒有的 repo 會是空陣列，前端自動隱藏
 
+### query
+
+可以透過filter.lua來對生成出來的[data.json](site/data.json)查詢
+
+出來都是寫到stdout, stderr, 如果有需要可以自己再導出到文件
+
+```sh
+nvim -l scripts/filter.lua -h
+
+nvim -l scripts/filter.lua  site/data.json \
+  "pushed_at>=2026-08-01T00:00:00+08:00" \
+  "stars>=1000" \
+  | jq .
+
+
+# 輸出到文件
+nvim -l scripts/filter.lua  site/data.json \
+  "pushed_at>=2026-08-01T00:00:00+08:00" \
+  "workflows nonempty" \
+  | jq . > /tmp/workflog_noempty.json
+```
+
+> [!NOTE] 多條件目前只支援AND, 都是用AND串接
+
 ## ofl 資料來源
 
 ```sh
