@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google Fonts OFL · Upstream GitHub Repositories</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔤</text></svg>">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1>Google Fonts OFL · Upstream GitHub</h1>
+      <p class="meta">
+        掃描 <a href="https://github.com/google/fonts" target="_blank" rel="noopener">google/fonts</a>
+        倉庫中所有 <code>ofl/**</code> 的 upstream 資訊，抽出各字體 family 的官方 GitHub 倉庫。
+        本頁由 GitHub Actions 自動產生。
+      </p>
+      <div class="stats-bar" id="stats-bar">
+        <span class="badge ok" id="badge-ok">成功：—</span>
+        <span class="badge fail" id="badge-fail">找不到：—</span>
+        <span class="badge" id="badge-time">產生時間：—</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Controls -->
+    <section class="controls" aria-label="篩選與排序">
+      <div class="control-row">
+        <label class="search-wrap">
+          <span class="sr-only">搜尋</span>
+          <input type="search" id="search" placeholder="搜尋 family / username / repo …" autocomplete="off">
+        </label>
+
+        <label>
+          排序
+          <select id="sort">
+            <option value="name-asc">Family 名稱 A→Z</option>
+            <option value="name-desc">Family 名稱 Z→A</option>
+            <option value="stars-desc" selected>⭐ Stars 高→低</option>
+            <option value="stars-asc">⭐ Stars 低→高</option>
+            <option value="forks-desc">🍴 Forks 高→低</option>
+            <option value="repo-asc">Repo 名稱 A→Z</option>
+          </select>
+        </label>
+
+        <label>
+          每頁
+          <select id="per-page">
+            <option value="12">12</option>
+            <option value="24" selected>24</option>
+            <option value="48">48</option>
+            <option value="96">96</option>
+            <option value="0">全部</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="control-row secondary">
+        <span id="result-count">載入中…</span>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </section>
+
+    <!-- Cards grid -->
+    <section id="grid" class="grid" aria-live="polite">
+      <!-- filled by JS -->
+    </section>
+
+    <section class="missing" id="missing-section" hidden>
+      <h2>⚠️ 找不到 GitHub 連結的 family</h2>
+      <p class="meta">原始清單：<a href="no_found.md">no_found.md</a></p>
+      <pre id="missing-list"></pre>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>
+        Source: <a href="https://github.com/google/fonts">google/fonts</a> ·
+        Scanner: <code>nvim -l scripts/find_github_page.lua</code> ·
+        Stats cards: <a href="https://github.com/pranesh-2005/github-readme-stats-fast" target="_blank" rel="noopener">github-readme-stats-fast</a>
+      </p>
+      <p>
+        原始輸出：
+        <a href="list.md">list.md</a> ·
+        <a href="no_found.md">no_found.md</a> ·
+        <a href="data.json">data.json</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

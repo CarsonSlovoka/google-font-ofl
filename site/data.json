@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-08-12T11:00:00Z",
+  "success_count": 3,
+  "fail_count": 0,
+  "items": [
+    {
+      "dirname": "42dotsans",
+      "username": "42dot",
+      "repo_name": "42dot-Sans",
+      "url": "https://github.com/42dot/42dot-Sans",
+      "stars": 120,
+      "forks": 8,
+      "language": "Python"
+    },
+    {
+      "dirname": "afacad",
+      "username": "Dicotype",
+      "repo_name": "Afacad",
+      "url": "https://github.com/Dicotype/Afacad",
+      "stars": 45,
+      "forks": 3,
+      "language": "HTML"
+    },
+    {
+      "dirname": "notosanshanunoo",
+      "username": "notofonts",
+      "repo_name": "hanunoo",
+      "url": "https://github.com/notofonts/hanunoo",
+      "stars": 12,
+      "forks": 2,
+      "language": "Python"
+    }
+  ]
+}

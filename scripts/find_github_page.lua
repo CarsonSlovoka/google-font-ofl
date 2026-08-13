@@ -218,6 +218,37 @@ local function get_github_info_from_ofl_txt(filepath)
   return nil
 end
 
+--- 輸出範本參考: ../site/data.json
+--- 當中items中的每一個項目，會再後續用GITHUB_TOKEN呼叫GitHub API為每個 unique repo 補上 `stars` / `forks` / `language`
+---
+---@param items GithubInfo[]
+---@param count_ok  integer
+---@param count_err integer
+---@return boolean
+local function gen_summary_json(items, count_ok, count_err)
+  -- Also write structured JSON for the GitHub Pages frontend
+  -- Path relative to CWD (workflow runs from repo root)
+  local json_path = "data.json"
+  local payload = {
+    generated_at = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+    success_count = count_ok,
+    fail_count = count_err,
+    items = items,
+  }
+  local ok_json, encoded = pcall(vim.json.encode, payload)
+  if ok_json and encoded then
+    local f = io.open(json_path, "w")
+    if f then
+      f:write(encoded)
+      f:close()
+      -- note on stderr so it doesn't pollute list.md
+      io.stderr:write(string.format("Wrote %s (%d items)\n", json_path, count_ok))
+    end
+  else
+    io.stderr:write("WARN: failed to encode data.json\n")
+  end
+end
+
 local function main()
   ---@type GithubInfo[]
   local github_pages = {}
@@ -276,9 +307,11 @@ local function main()
   end
   io.write(string.format("\n成功數量:%d\n", count_ok))
 
+  gen_summary_json(github_pages, count_ok, count_err)
+
   if err then
     io.stderr:write(string.format("\n失敗總數量:%d\n", count_err))
-    -- 設定error code. stderr與error code不是絕對的，不代表有stderr error code就一定會有
+    -- 設定error code與stderr不是絕對的，不代表有stderr有，而error code就一定會有                                                                    │
     -- Non-zero exit when there are failures (useful for CI awareness)
     vim.cmd("cquit 1")
   end

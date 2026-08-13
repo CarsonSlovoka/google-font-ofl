@@ -3,9 +3,9 @@ name: Generate GitHub Pages from Lua scan
 on:
   push:
     branches: [main, master]
-# schedule:
-#   # Weekly refresh to pick up new Google Fonts ARTICLE files
-#   - cron: "0 6 * * 1"
+  # schedule:
+  #   # Weekly refresh to pick up new Google Fonts upstream files
+  #   - cron: "0 6 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -41,7 +41,7 @@ jobs:
           echo "/opt/nvim/bin" >> "$GITHUB_PATH"
           nvim --version | head -3
 
-      - name: Fetch latest ARTICLE.en_us.html from google/fonts (sparse)
+      - name: Fetch latest upstream files from google/fonts (sparse)
         run: |
           set -euo pipefail
           rm -rf ofl
@@ -64,13 +64,8 @@ jobs:
               cp -a ofl/. "$GITHUB_WORKSPACE/ofl/"
             fi
           )
-          # echo "ARTICLE count:"
-          # find ofl -name 'ARTICLE.en_us.html' | wc -l
-          # # find ofl -name 'ARTICLE.en_us.html' | head -5
-          # # Avoid broken-pipe exit under pipefail (head closes early)
-          # find ofl -name 'ARTICLE.en_us.html' -print | head -n 5 || true
 
-      - name: Run Lua scanner (stdout → list.md, stderr → no_found.md)
+      - name: Run Lua scanner (stdout → list.md, stderr → no_found.md, also data.json)
         id: scan
         run: |
           set +e
@@ -81,21 +76,110 @@ jobs:
           set -e
           echo "Lua exit code: $EXIT_CODE"
           echo "=== list.md (head) ==="
+          # 只取前20筆，方便github上用訊息來debug
           head -n 20 list.md || true
           echo "=== no_found.md (head) ==="
           head -n 20 no_found.md || true
+          echo "=== data.json exists? ==="
+          ls -la data.json || true
 
           if [ ! -f list.md ]; then
             echo "ERROR: list.md was not produced"
             exit 1
           fi
+          if [ ! -f data.json ]; then
+            echo "ERROR: data.json was not produced by Lua scanner"
+            exit 1
+          fi
 
-          # Extract counts (script always writes 成功數量 even on partial success)
+          # Extract counts
           SUCCESS=$(grep -oP '成功數量:\K[0-9]+' list.md || echo 0)
           FAIL=$(grep -oP '失敗總數量:\K[0-9]+' no_found.md || echo 0)
           echo "success_count=$SUCCESS" >> "$GITHUB_OUTPUT"
           echo "fail_count=$FAIL" >> "$GITHUB_OUTPUT"
           echo "Success: $SUCCESS  Fail: $FAIL"
+
+      - name: Enrich data.json with stars / forks / language (GitHub API)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 << 'PY'
+          import json, os, time, urllib.request, urllib.error
+          from concurrent.futures import ThreadPoolExecutor, as_completed
+
+          token = os.environ.get("GH_TOKEN", "")
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "google-fonts-ofl-pages",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+          if token:
+              headers["Authorization"] = f"Bearer {token}"
+
+          with open("data.json", encoding="utf-8") as f:
+              data = json.load(f)
+
+          items = data.get("items") or []
+          # unique (username, repo) → list of item indices
+          unique = {}
+          for i, it in enumerate(items):
+              key = (it.get("username") or "", it.get("repo_name") or "")
+              unique.setdefault(key, []).append(i)
+
+          print(f"Items: {len(items)}, unique repos: {len(unique)}")
+
+          def fetch_repo(username, repo):
+              url = f"https://api.github.com/repos/{username}/{repo}"
+              req = urllib.request.Request(url, headers=headers)
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as resp:
+                      body = json.loads(resp.read().decode())
+                      return {
+                          "stars": body.get("stargazers_count", 0),
+                          "forks": body.get("forks_count", 0),
+                          "language": body.get("language") or "",
+                          "description": body.get("description") or "",
+                      }
+              except urllib.error.HTTPError as e:
+                  return {"stars": -1, "forks": -1, "language": "", "error": f"HTTP {e.code}"}
+              except Exception as e:
+                  return {"stars": -1, "forks": -1, "language": "", "error": str(e)}
+
+          results = {}
+          # modest parallelism to stay polite with secondary rate limits
+          with ThreadPoolExecutor(max_workers=8) as ex:
+              futs = {
+                  ex.submit(fetch_repo, u, r): (u, r)
+                  for (u, r) in unique.keys()
+                  if u and r
+              }
+              done = 0
+              for fut in as_completed(futs):
+                  key = futs[fut]
+                  results[key] = fut.result()
+                  done += 1
+                  if done % 50 == 0 or done == len(futs):
+                      print(f"  fetched {done}/{len(futs)}")
+
+          enriched = 0
+          for (u, r), idxs in unique.items():
+              info = results.get((u, r), {"stars": -1, "forks": -1, "language": ""})
+              for i in idxs:
+                  items[i]["stars"] = info.get("stars", -1)
+                  items[i]["forks"] = info.get("forks", -1)
+                  items[i]["language"] = info.get("language") or ""
+                  if "description" in info and info["description"]:
+                      items[i]["description"] = info["description"]
+                  if items[i]["stars"] >= 0:
+                      enriched += 1
+
+          data["items"] = items
+          data["enriched_count"] = enriched
+          with open("data.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, ensure_ascii=False, indent=2)
+          print(f"Enriched {enriched}/{len(items)} items → data.json")
+          PY
 
       - name: Build static site for GitHub Pages
         env:
@@ -104,94 +188,24 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p _site
+
+          # Copy template (HTML / CSS / JS) — editable outside the workflow
+          cp -a site/. _site/
+
+          # Data files (置換成生成出來的檔案)
+          cp data.json _site/data.json
           cp list.md _site/list.md
           cp no_found.md _site/no_found.md
+
           GENERATED_AT=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          # Optional: stamp a small meta file for debugging
+          printf '%s\n' "$GENERATED_AT" > _site/generated_at.txt
 
-          # Write HTML template
-          cat > _site/index.html << 'HTML'
-          <!DOCTYPE html>
-          <html lang="zh-Hant">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Google Fonts OFL → GitHub Pages</title>
-            <style>
-              :root { color-scheme: light dark; }
-              body {
-                font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-                max-width: 960px; margin: 2rem auto; padding: 0 1.2rem; line-height: 1.55;
-              }
-              h1 { font-size: 1.6rem; }
-              h2 { margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
-              .meta { color: #666; font-size: 0.95rem; }
-              pre {
-                background: #f4f4f5; padding: 1rem; overflow: auto; border-radius: 6px;
-                white-space: pre-wrap; word-break: break-word; font-size: 0.9rem;
-              }
-              @media (prefers-color-scheme: dark) {
-                pre { background: #1e1e1e; }
-              }
-              a { color: #0969da; }
-              .badge {
-                display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px;
-                font-size: 0.85rem; background: #eef; margin-right: 0.4rem;
-              }
-              .badge.ok { background: #d1fae5; color: #065f46; }
-              .badge.fail { background: #fee2e2; color: #991b1b; }
-              footer { margin-top: 3rem; font-size: 0.85rem; color: #888; }
-            </style>
-          </head>
-          <body>
-            <h1>Google Fonts OFL · Upstream GitHub Repositories</h1>
-            <p class="meta">
-              本頁由 GitHub Actions 執行 <code>scripts/find_github_page.lua</code> 自動產生。<br>
-              掃描 <code>google/fonts</code> 倉庫中所有 <code>ofl/**/ARTICLE.en_us.html</code>，
-              抽出各字體 family 的官方 GitHub 連結。
-            </p>
-            <p>
-              <span class="badge ok">成功：__SUCCESS__</span>
-              <span class="badge fail">找不到 GitHub：__FAIL__</span>
-              <span class="badge">產生時間：__GENERATED_AT__</span>
-            </p>
-            <p>
-              原始輸出檔：
-              <a href="list.md">list.md</a> ·
-              <a href="no_found.md">no_found.md</a>
-            </p>
-
-            <h2>✅ 已找到 GitHub 的 family（stdout / list.md）</h2>
-            <pre>__LIST_CONTENT__</pre>
-
-            <h2>⚠️ 找不到 GitHub 連結的 family（stderr / no_found.md）</h2>
-            <pre>__NOFOUND_CONTENT__</pre>
-
-            <footer>
-              Source: <a href="https://github.com/google/fonts">google/fonts</a> ·
-              Scanner: <code>nvim -l scripts/find_github_page.lua</code>
-            </footer>
-          </body>
-          </html>
-          HTML
-
-          # Safely inject content with Python (handles escaping)
-          SUCCESS="$SUCCESS" FAIL="$FAIL" GENERATED_AT="$GENERATED_AT" python3 -c '
-          import pathlib, html, os
-          site = pathlib.Path("_site")
-          index = (site / "index.html").read_text(encoding="utf-8")
-          list_md = (site / "list.md").read_text(encoding="utf-8", errors="replace")
-          nofound = (site / "no_found.md").read_text(encoding="utf-8", errors="replace")
-          index = index.replace("__SUCCESS__", os.environ.get("SUCCESS", "0"))
-          index = index.replace("__FAIL__", os.environ.get("FAIL", "0"))
-          index = index.replace("__GENERATED_AT__", os.environ.get("GENERATED_AT", ""))
-          index = index.replace("__LIST_CONTENT__", html.escape(list_md))
-          index = index.replace("__NOFOUND_CONTENT__", html.escape(nofound))
-          (site / "index.html").write_text(index, encoding="utf-8")
-          print("index.html generated successfully")
-          print("Site contents:")
-          for p in sorted(site.iterdir()):
-              print(" ", p.name, p.stat().st_size, "bytes")
-          '
+          echo "Site contents:"
+          find _site -type f | sort
+          echo "--- data.json head ---"
+          head -c 400 _site/data.json || true
+          echo
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
