@@ -100,7 +100,8 @@ jobs:
           echo "fail_count=$FAIL" >> "$GITHUB_OUTPUT"
           echo "Success: $SUCCESS  Fail: $FAIL"
 
-      - name: Enrich data.json (stars / forks / language / recent activity / workflows)
+      - name: (legacy - disabled) Enrich data.json (stars / forks / language / recent activity / workflows)
+        if: ${{ false }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -108,6 +109,28 @@ jobs:
           # Logic lives in scripts/enrich_github_data.py (maintainable outside YAML)
           python3 scripts/enrich_github_data.py data.json --with-workflows
           # python3 scripts/enrich_github_data.py data.json  # 也行, 但是否有action就會不曉得
+      - name: Enrich data.json (Tree API + sources / workflows)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # v2 enricher — single pass for meta + tree/files
+          # Output overwrites data.json in place (same path Lua produced)
+          python3 scripts/enrich_github_data_tree.py data.json -o data.json
+          echo "=== enrich summary (tail) ==="
+          # tree script prints progress to stderr; confirm schema keys exist
+          python3 - <<'PY'
+          import json
+          with open("data.json", encoding="utf-8") as f:
+              d = json.load(f)
+          items = d.get("items") or []
+          print(f"items={len(items)} enrich_version={d.get('enrich_version')}")
+          print(f"tree_method_counts={d.get('tree_method_counts')}")
+          n_glyphs = sum(1 for it in items if it.get("has_glyphs"))
+          n_pkg = sum(1 for it in items if it.get("has_glyphspackage"))
+          n_wf = sum(1 for it in items if it.get("workflows"))
+          print(f"has_glyphs={n_glyphs} has_glyphspackage={n_pkg} with_workflows={n_wf}")
+          PY
 
       - name: Build static site for GitHub Pages
         env:
@@ -122,6 +145,9 @@ jobs:
 
           # Data files (置換成生成出來的檔案)
           cp data.json _site/data.json
+          mkdir -p _site/v2
+          cp data.json _site/v2/data.json
+
           cp list.md _site/list.md
           cp no_found.md _site/no_found.md
 
@@ -134,6 +160,8 @@ jobs:
           echo "--- data.json head ---"
           head -c 400 _site/data.json || true
           echo
+          echo "--- v2 data.json exists? ---"
+          ls -la _site/v2/data.json _site/v2/index.html _site/v2/js/app.js || true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -150,3 +178,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+

@@ -1,5 +1,50 @@
 # CHANGES
 
+## 2026-08-17 — v2 Tree enrich + sources/*.glyphs 篩選
+
+### 目標
+
+在不改動原有 `enrich_github_data.py` 與 v1 頁面行為的前提下，支援偵測 upstream 是否有：
+
+- `sources/*.glyphs`（檔案）
+- `sources/*.glyphspackage`（目錄）
+
+### 新增
+
+1. **`scripts/enrich_github_data_tree.py`**（v2 enricher）
+   - 優先使用 Git Trees API（`recursive=1`）一次取得 workflows / issue templates / sources
+   - 若 tree `truncated` 或失敗 → Contents API fallback
+   - 新欄位：`has_glyphs` / `has_glyphspackage` / `glyphs_sources` / `glyphspackage_sources` / `tree_method`
+   - 原版 `enrich_github_data.py` **完全保留、不修改**
+
+2. **`site/v2/` 頁面**
+   - 獨立前端，不影響 v1
+   - 新增篩選：
+     - 僅顯示有 `sources/*.glyphs`
+     - 僅顯示有 `sources/*.glyphspackage`
+     - 有 Glyphs source（兩者任一）
+   - 卡片顯示 source badge 與檔名連結
+
+3. **文件**
+   - README 補上 v2 用法與 API 成本
+   - v1 `index.html` 加上連到 v2 的入口
+
+### API 成本（約 1,279 unique）
+
+| 路徑 | 每 repo | 總計（約） |
+|------|---------|------------|
+| Tree 成功 | 2 | ~2,558 |
+| truncated → fallback | 2 + 最多 3 Contents | 少數 repo 較高 |
+
+仍低於 GitHub authenticated 5,000/hr 主上限
+
+### 不相容說明
+
+v2 data 多了新欄位；v1 前端不認識這些欄位也無妨（會忽略）。
+為避免混用，v2 使用獨立頁面與 `site/v2/data.json`。
+
+---
+
 ## 2026-08-13 — 篩選強化 + Python 抽離 + 近期異動 + Actions 連結
 
 ### 需求

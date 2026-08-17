@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-08-12T11:00:00Z",
+  "success_count": 3,
+  "fail_count": 0,
+  "items": [
+    {
+      "username": "42dot",
+      "dirname": "42dotsans",
+      "url": "https://github.com/42dot/42dot-Sans",
+      "repo_name": "42dot-Sans",
+      "stars": 57,
+      "forks": 6,
+      "language": "Makefile",
+      "description": "42dot Sans is the corporate typeface for 42dot, designed to encapsulate the brand’s core identity and philosophy.",
+      "pushed_at": "2025-04-29T03:36:48Z",
+      "updated_at": "2026-08-16T06:01:16Z",
+      "created_at": "2024-12-12T05:25:37Z",
+      "workflows": [
+        {
+          "name": "build.yaml",
+          "path": ".github/workflows/build.yaml",
+          "url": "https://github.com/42dot/42dot-Sans/blob/main/.github/workflows/build.yaml"
+        }
+      ],
+      "issue_templates": [],
+      "glyphs_sources": [],
+      "glyphspackage_sources": [
+        {
+          "name": "AstaSans.glyphspackage",
+          "path": "sources/AstaSans.glyphspackage",
+          "url": "https://github.com/42dot/42dot-Sans/tree/main/sources/AstaSans.glyphspackage"
+        }
+      ],
+      "has_glyphs": false,
+      "has_glyphspackage": true,
+      "tree_method": "tree"
+    },
+    {
+      "dirname": "afacad",
+      "username": "Dicotype",
+      "url": "https://github.com/Dicotype/Afacad",
+      "repo_name": "Afacad",
+      "stars": 52,
+      "forks": 2,
+      "language": "Shell",
+      "description": "A custom lettering project conformed to the proportions used by Architect Sture Elmén in the 1940s.",
+      "pushed_at": "2024-10-03T08:40:26Z",
+      "updated_at": "2026-08-15T22:52:45Z",
+      "created_at": "2023-01-25T18:53:51Z",
+      "workflows": [],
+      "issue_templates": [],
+      "glyphs_sources": [
+        {
+          "name": "Afacad-Italic.glyphs",
+          "path": "sources/Afacad-Italic.glyphs",
+          "url": "https://github.com/Dicotype/Afacad/blob/main/sources/Afacad-Italic.glyphs"
+        },
+        {
+          "name": "Afacad.glyphs",
+          "path": "sources/Afacad.glyphs",
+          "url": "https://github.com/Dicotype/Afacad/blob/main/sources/Afacad.glyphs"
+        },
+        {
+          "name": "AfacadFlux.glyphs",
+          "path": "sources/AfacadFlux.glyphs",
+          "url": "https://github.com/Dicotype/Afacad/blob/main/sources/AfacadFlux.glyphs"
+        }
+      ],
+      "glyphspackage_sources": [],
+      "has_glyphs": true,
+      "has_glyphspackage": false,
+      "tree_method": "tree"
+    },
+    {
+      "username": "notofonts",
+      "dirname": "notosanshanunoo",
+      "url": "https://github.com/notofonts/hanunoo",
+      "repo_name": "hanunoo",
+      "stars": 2,
+      "forks": 1,
+      "language": "Python",
+      "description": "Noto Hanunoo",
+      "pushed_at": "2026-08-10T08:27:26Z",
+      "updated_at": "2026-08-10T08:28:18Z",
+      "created_at": "2022-06-20T17:47:16Z",
+      "workflows": [
+        {
+          "name": "build.yaml",
+          "path": ".github/workflows/build.yaml",
+          "url": "https://github.com/notofonts/hanunoo/blob/main/.github/workflows/build.yaml"
+        }
+      ],
+      "issue_templates": [],
+      "glyphs_sources": [
+        {
+          "name": "NotoSansHanunoo.glyphs",
+          "path": "sources/NotoSansHanunoo.glyphs",
+          "url": "https://github.com/notofonts/hanunoo/blob/main/sources/NotoSansHanunoo.glyphs"
+        }
+      ],
+      "glyphspackage_sources": [],
+      "has_glyphs": true,
+      "has_glyphspackage": false,
+      "tree_method": "tree"
+    }
+  ],
+  "enriched_count": 3,
+  "enrich_version": "tree-v1",
+  "with_files": true,
+  "tree_method_counts": {
+    "tree": 3,
+    "contents_fallback": 0,
+    "none": 0
+  }
+}

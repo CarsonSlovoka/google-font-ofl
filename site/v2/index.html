@@ -3,27 +3,67 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Google Fonts OFL · Upstream GitHub Repositories</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>Google Fonts OFL · Upstream GitHub (v2 · sources filter)</title>
+  <link rel="stylesheet" href="../css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔤</text></svg>">
+  <style>
+    /* v2-only extras; keep shared style.css intact */
+    .version-pill {
+      display: inline-block;
+      margin-left: 0.5rem;
+      padding: 0.15rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 999px;
+      background: var(--ok-bg);
+      color: var(--ok-fg);
+      vertical-align: middle;
+    }
+    .nav-switch {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .source-badge {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      margin: 0 0.15rem 0.15rem 0;
+      font-size: 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+    }
+    .source-badge.glyphs { border-color: #8250df; color: #8250df; }
+    .source-badge.pkg { border-color: #bf3989; color: #bf3989; }
+    @media (prefers-color-scheme: dark) {
+      .source-badge.glyphs { color: #d2a8ff; border-color: #8957e5; }
+      .source-badge.pkg { color: #ff9bce; border-color: #bf4b8a; }
+    }
+  </style>
 </head>
 <body>
   <header class="site-header">
     <div class="container">
-      <h1>Google Fonts OFL · Upstream GitHub</h1>
+      <h1>
+        Google Fonts OFL · Upstream GitHub
+        <span class="version-pill">v2 · Tree + sources</span>
+      </h1>
       <p class="meta">
         掃描 <a href="https://github.com/google/fonts" target="_blank" rel="noopener">google/fonts</a>
-        倉庫中所有 <code>ofl/**</code> 的 upstream 資訊，抽出各字體 family 的官方 GitHub 倉庫。
-        本頁由 GitHub Actions 自動產生。
+        倉庫中所有 <code>ofl/**</code> 的 upstream 資訊。
+        本頁使用 <code>enrich_github_data_tree.py</code>（Git Trees API + Contents fallback），
+        可篩選 <code>sources/*.glyphs</code> 與 <code>sources/*.glyphspackage</code>。
       </p>
-      <p class="meta">
-        需要篩選 <code>sources/*.glyphs</code> / <code>sources/*.glyphspackage</code>？
-        請使用 <a href="v2/index.html">v2 頁面（Tree enrich）</a>。
+      <p class="nav-switch">
+        <a href="../index.html">← 回到 v1 頁面</a>
+        · 資料：<a href="data.json">data.json</a>
       </p>
       <div class="stats-bar" id="stats-bar">
         <span class="badge ok" id="badge-ok">成功：—</span>
         <span class="badge fail" id="badge-fail">找不到：—</span>
         <span class="badge" id="badge-time">產生時間：—</span>
+        <span class="badge" id="badge-enrich">enrich：—</span>
       </div>
     </div>
   </header>
@@ -91,6 +131,23 @@
         </label>
       </div>
 
+      <div class="control-row filters">
+        <label class="checkbox-label">
+          <input type="checkbox" id="has-glyphs">
+          僅顯示有 <code>sources/*.glyphs</code>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" id="has-glyphspackage">
+          僅顯示有 <code>sources/*.glyphspackage</code>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" id="has-any-glyphs-source">
+          有 Glyphs source（.glyphs 或 .glyphspackage）
+        </label>
+      </div>
+
       <div class="control-row secondary">
         <span id="result-count">載入中…</span>
         <div class="pagination" id="pagination"></div>
@@ -101,7 +158,7 @@
 
     <section class="missing" id="missing-section" hidden>
       <h2>⚠️ 找不到 GitHub 連結的 family</h2>
-      <p class="meta">原始清單：<a href="no_found.md">no_found.md</a></p>
+      <p class="meta">原始清單：<a href="../no_found.md">no_found.md</a>（若 CI 有產生）</p>
       <pre id="missing-list"></pre>
     </section>
   </main>
@@ -111,16 +168,12 @@
       <p>
         Source: <a href="https://github.com/google/fonts">google/fonts</a> ·
         Scanner: <code>nvim -l scripts/find_github_page.lua</code> ·
-        Enrich v1: <code>scripts/enrich_github_data.py</code> ·
         Enrich v2: <code>scripts/enrich_github_data_tree.py</code> ·
-        Stats cards: <a href="https://github.com/pranesh-2005/github-readme-stats-fast" target="_blank" rel="noopener">github-readme-stats-fast</a>
+        Stats: <a href="https://github.com/pranesh-2005/github-readme-stats-fast" target="_blank" rel="noopener">github-readme-stats-fast</a>
       </p>
       <p>
-        原始輸出：
-        <a href="list.md">list.md</a> ·
-        <a href="no_found.md">no_found.md</a> ·
-        <a href="data.json">data.json</a> ·
-        <a href="v2/index.html">v2 頁面</a>
+        v1 頁面：<a href="../index.html">site/index.html</a> ·
+        v2 資料：<a href="data.json">site/v2/data.json</a>
       </p>
     </div>
   </footer>
