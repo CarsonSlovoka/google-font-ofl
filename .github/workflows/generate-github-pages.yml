@@ -3,9 +3,10 @@ name: Generate GitHub Pages from Lua scan
 on:
   push:
     branches: [main, master]
-  # schedule:
-  #   # Weekly refresh to pick up new Google Fonts upstream files
-  #   - cron: "0 6 * * 1"
+  schedule:
+    # Weekly refresh to pick up new Google Fonts upstream files
+    # 03:00 (六) UTC+8
+    - cron: "0 19 * * 5"
   workflow_dispatch:
 
 permissions:
