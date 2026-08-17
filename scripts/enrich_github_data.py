@@ -28,8 +28,19 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
-
 API = "https://api.github.com"
+"""
+API使用片段: `git show -p adcd2a38:scripts/enrich_github_data.py | bat -l python -P -r 75:77 -r 89:96 -r 129:134`
+
+
+GET /repos/{username}/{repo}
+
+以下開啟 --with-workflows 時，會額外再使用這幾個API
+GET /repos/{username}/{repo}/contents/.github/workflows
+GET /repos/{username}/{repo}/contents/.github/ISSUE_TEMPLATE
+"""
+
+
 DEFAULT_WORKERS = 8
 CONTENTS_WORKERS = 6
 
@@ -144,12 +155,14 @@ def enrich(
     headers = _headers(token)
     items: list[dict[str, Any]] = data.get("items") or []
 
+    # Tip: 某些專案在ofl頁面: `https://github.com/google/fonts/tree/8c379a2/ofl` 會有多個，例如: cascadiacode, cascadiamono 它們都屬於: https://github.com/microsoft/cascadia-code 中專案的一部份，所以這類的只要一個
     unique: dict[tuple[str, str], list[int]] = {}
     for i, it in enumerate(items):
         key = (it.get("username") or "", it.get("repo_name") or "")
         if key[0] and key[1]:
             unique.setdefault(key, []).append(i)
 
+    # Items: 1937, unique repos: 1279 當前唯一的項目共有1279. 當使用: --with-workflows 時，共需要: 1279*(1+2)= 3837. 還在5000內
     print(f"Items: {len(items)}, unique repos: {len(unique)}", file=sys.stderr)
 
     # --- repo metadata ---
@@ -228,7 +241,9 @@ def enrich(
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Enrich OFL upstream data.json via GitHub API")
+    p = argparse.ArgumentParser(
+        description="Enrich OFL upstream data.json via GitHub API"
+    )
     p.add_argument("input", help="path to data.json from Lua scanner")
     p.add_argument("-o", "--output", help="output path (default: overwrite input)")
     p.add_argument(
@@ -241,7 +256,10 @@ def main() -> int:
 
     token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or ""
     if not token:
-        print("WARN: no GH_TOKEN/GITHUB_TOKEN — unauthenticated rate limit is low", file=sys.stderr)
+        print(
+            "WARN: no GH_TOKEN/GITHUB_TOKEN — unauthenticated rate limit is low",
+            file=sys.stderr,
+        )
 
     with open(args.input, encoding="utf-8") as f:
         data = json.load(f)
